@@ -611,7 +611,7 @@
    <tile gid="182"/>
   </data>
  </layer>
- <layer name="Arrows" width="20" height="15">
+ <layer name="Misc" width="20" height="15">
   <data>
    <tile gid="0"/>
    <tile gid="0"/>

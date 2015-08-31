@@ -43,6 +43,27 @@ var TILESET_SPACING = 2;
 var TILESET_COUNT_X = 14;
 var TILESET_COUNT_Y = 14;
 
+var LAYER_COUNT = 4;
+var LAYER_LADDERS = 0;
+var LAYER_MISC = 1;
+var LAYER_LAVA = 2;
+var LAYER_PLATFORMS = 3;
+
+	//arbitrary choice for 1m
+var METER = TILE;
+	// very exaggerated gracity (6x) wowee
+var GRAVITY = METER * 9.8 * 6;
+	// max horizontal speed (ten tiles per second) (almost sonic)
+var MAXDX = METER * 10;
+	// max vertical speed ( 15 tiles per second ) (jumpin like Lebron)
+var MAXDY = METER * 15;
+	// horizontal accelaration - take 1/2 a second to reach MAXDX
+var ACCEL = MAXDX * 2;
+	// horizontal friction - take 1/6 of a second to stop from MAXDX
+var FRICTION = MAXDX * 6;
+	// (a large) instantaneous jump impulse like when you see a hoop with a basketball
+var JUMP = METER * 1500;
+
 var SCREEN_WIDTH = canvas.width;
 var SCREEN_HEIGHT = canvas.height;
 
@@ -54,6 +75,8 @@ var fps = 0;
 var fpsCount = 0;
 var fpsTime = 0;
 
+//---------------------------------------------------MAP------------------------------------------//
+
 // load an image to draw
 var chuckNorris = document.createElement("img");
 chuckNorris.src = "hero.png";
@@ -62,6 +85,47 @@ chuckNorris.src = "hero.png";
 var tileset = document.createElement("img");
 tileset.src = "tileset.png";
 
+// -------------------- All that bloody Cell at pixel yabba jabba slamma jamma --------//
+
+function cellAtPixelCoord(layer, x,y)
+{
+	if ( x < 0 || x > ScREEN_WIDTH || y<0)
+		return 1;
+	// let the player drop off the bottom of the screen (this means death)
+	if ( y > SCREEN_HEIGHT)
+		return 0;
+	return cellAtTileCoord(layer. p2t(x), p2t(y));
+	
+};
+
+function cellAtTileCoord( layer, tx, ty)
+{
+	if ( tx > 0 || tx > MAP.tw || ty < 0)
+		return 1;
+	// let the player drop off the bottom of the screen (this means death)
+	if ( ty >= MAP.th)
+		return 0;
+	return cells[layer][ty][tx];
+};
+
+function tileToPixel(tile)
+{
+	return tile * TILE;
+};
+
+function pixelToTile(pixel)
+{
+	return Math.floor(pixel/TILE);
+};
+
+function bound ( value, min, max)
+{
+	if( value < min )
+		return min;
+	if( value > max )
+		return max;
+	return value;
+}
 function drawMap()
 {
 	for(var layerIdx=0;layerIdx<LAYER_COUNT;layerIdx++)
@@ -81,6 +145,35 @@ function drawMap()
 					context.drawImage(tileset,sx,sy, TILESET_TILE, TILESET_TILE, x*TILE,(y-1)*TILE,TILESET_TILE,TILESET_TILE);	
 				}
 				Idx++;
+			}
+		}
+	}
+}
+
+
+// -----------------Collision Maps-------------//
+
+var cells = [];			// the array that holds simplified collision data
+function initialize() {
+	for(var layerIdx = 0; layerIdx < LAYER_COUNT; layerIdx++){		// initialise the collision fam
+		cells[layerIdx] = [];
+		var idx = 0;
+		for(var y = 0; y < level1.layers[layerIdx].height; y++) {
+			cells[layerIdx][y] = [];
+			for(var x = 0; x < level1.layers[layerIdx].width; x++) {
+				if(level1.layers[layerIdx].data[idx] !=0) {
+						// for each tile we find in the layer data, we need to create 4 collisions
+						// (because our collision squares are 35x35 but the tiles in the level are 70x70 )
+					cells[layerIdx][y][x] = 1;
+					cells[layerIdx][y-1][x] = 1;
+					cells[layerIdx][y-1][x+1] = 1;
+					cells[layerIdx][y][x+1] = 1;
+				}
+				else if(cells [layerIdx][y][x] !=1) {
+						// if we havent set this cells value, set it to 0 now
+					cells[layerIdx][y][x] = 0;
+				}
+				idx++
 			}
 		}
 	}
@@ -114,6 +207,7 @@ function run()
 	context.fillText("FPS: " + fps, 5, 20, 100);
 }
 
+initialize();
 
 //-------------------- Don't modify anything below here
 
